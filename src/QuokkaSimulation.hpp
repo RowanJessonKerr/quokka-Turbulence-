@@ -52,6 +52,7 @@
 #include "chemistry/Chemistry.hpp"
 #include "cooling/GrackleLikeCooling.hpp"
 #include "cooling/TabulatedCooling.hpp"
+#include "turbulence/TurbulentDriving.hpp"
 #include "eos.H"
 #include "hydro/hydro_system.hpp"
 #include "hyperbolic_system.hpp"
@@ -526,6 +527,10 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 		} else {
 			amrex::Abort("Invalid cooling table type!");
 		}
+	}
+
+	if (Physics_Traits<problem_t>::is_driving_enabled){
+		quokka::TurbulentDriving::computeDriving<problem_t>(state,dt);
 	}
 
 	// start by assuming chemistry burn is successful.

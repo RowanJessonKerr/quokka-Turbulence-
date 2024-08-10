@@ -64,6 +64,8 @@ template <> struct Physics_Traits<PulseProblem> {
 	static constexpr int numMassScalars = 0;		     // number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
 	static constexpr bool is_radiation_enabled = true;
+	static constexpr bool is_driving_enabled = false;
+
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
@@ -74,6 +76,7 @@ template <> struct Physics_Traits<AdvPulseProblem> {
 	static constexpr int numMassScalars = 0;		     // number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
 	static constexpr bool is_radiation_enabled = true;
+	static constexpr bool is_driving_enabled = false;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;

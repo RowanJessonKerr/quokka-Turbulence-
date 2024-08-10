@@ -1,0 +1,6 @@
+if (AMReX_SPACEDIM GREATER_EQUAL 2)
+    add_executable(turbulence2D test_turbulence2D.cpp ${QuokkaObjSources})
+    if(AMReX_GPU_BACKEND MATCHES "CUDA")
+        setup_target_for_cuda_compilation(turbulence2D)
+    endif()
+endif()

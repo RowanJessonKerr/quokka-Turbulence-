@@ -100,6 +100,8 @@ template <> struct Physics_Traits<SGProblem> {
 	static constexpr int numMassScalars = 0;		     // number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
 	static constexpr bool is_radiation_enabled = true;
+	static constexpr bool is_driving_enabled = false;
+
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
@@ -162,9 +164,10 @@ template <> struct quokka::EOS_Traits<MGproblem> {
 template <> struct Physics_Traits<MGproblem> {
 	// cell-centred
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr int numMassScalars = 0;		     // number of mass scalars
+	static constexpr int numMassScalars = 0;// number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
 	static constexpr bool is_radiation_enabled = true;
+	static constexpr bool is_driving_enabled = false;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;

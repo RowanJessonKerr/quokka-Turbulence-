@@ -11,6 +11,8 @@ template <typename problem_t> struct Physics_Traits {
 	static constexpr int numMassScalars = 0;
 	static constexpr int numPassiveScalars = numMassScalars + 0;
 	static constexpr bool is_radiation_enabled = false;
+	static constexpr bool is_driving_enabled = false;
+
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
