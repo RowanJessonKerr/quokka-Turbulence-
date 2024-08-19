@@ -13,7 +13,7 @@
 #include "radiation/radiation_system.hpp"
 
 namespace quokka::TurbulentDriving{
-template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in) -> bool
+template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in, const amrex::Real levelVolume) -> bool
 {
 	const Real dt = dt_in;
 
@@ -33,7 +33,11 @@ template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amr
 			const amrex::Real x3Mom = state(i, j, k, HydroSystem<problem_t>::x3Momentum_index);
 			const amrex::Real Egas = state(i, j, k, HydroSystem<problem_t>::energy_index);
 
-			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) = x1Mom + 0.1;
+			const amrex::Real dXMom = 0.1;
+			const amrex::Real dE = dXMom * dXMom / 2 * (rho * levelVolume);
+
+			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) = x1Mom + dXMom;
+			state(i, j, k, HydroSystem<problem_t>::energy_index) = Egas;
 		});
 	}
 	return true;
