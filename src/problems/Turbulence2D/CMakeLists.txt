@@ -1,3 +1,4 @@
+if (AMReX_SPACEDIM EQUAL 3)
     add_executable(test_turbulence2D test_turbulence.cpp ${QuokkaObjSources}
             test_turbulence.cpp
             test_turbulence.cpp)
@@ -6,3 +7,4 @@
     endif()
 
     add_test(NAME turbulence2D COMMAND test_turbulence2D test_turbulence2D.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+endif()

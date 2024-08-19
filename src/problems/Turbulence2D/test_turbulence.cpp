@@ -4,6 +4,10 @@
 
 #include "test_turbulence.hpp"
 
+#include "QuokkaSimulation.hpp"
+#include "hydro/hydro_system.hpp"
+#include "turbulence/TurbulentDriving.hpp"
+
 #include "AMReX.H"
 #include "AMReX_BC_TYPES.H"
 #include "AMReX_BLProfiler.H"
@@ -20,9 +24,7 @@
 #include "AMReX_TableData.H"
 #include "AMReX_iMultiFab.H"
 
-#include "QuokkaSimulation.hpp"
-#include "hydro/hydro_system.hpp"
-#include "turbulence/TurbulentDriving.hpp"
+
 
 struct BasicTurbulence {
 }; // dummy type to allow compile-type polymorphism via template specialization
@@ -36,6 +38,13 @@ template <> struct Physics_Traits<BasicTurbulence> {
     static constexpr int numMassScalars = 0;
     static constexpr int numPassiveScalars = numMassScalars + 1;
     static constexpr int nGroups = 1; // number of radiation groups
+};
+
+template <> struct quokka::EOS_Traits<BasicTurbulence> {
+	static constexpr double gamma = 1.0;
+	static constexpr double cs_isothermal = 1.0; // dimensionless
+	static constexpr double mean_molecular_weight = C::m_u;
+	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> void QuokkaSimulation<BasicTurbulence>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
@@ -81,7 +90,7 @@ auto problem_main() -> int
 	QuokkaSimulation<BasicTurbulence> sim(BCs_cc);
 
 	sim.maxTimesteps_ = max_timesteps;
-	sim.maxDt_ = 1 / 64;
+	sim.constantDt_ = 1 / 16;
 
 	sim.setInitialConditions();
 

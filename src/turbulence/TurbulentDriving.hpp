@@ -32,6 +32,8 @@ template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amr
 			const amrex::Real x2Mom = state(i, j, k, HydroSystem<problem_t>::x2Momentum_index);
 			const amrex::Real x3Mom = state(i, j, k, HydroSystem<problem_t>::x3Momentum_index);
 			const amrex::Real Egas = state(i, j, k, HydroSystem<problem_t>::energy_index);
+
+			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) = x1Mom + 0.1;
 		});
 	}
 	return true;
