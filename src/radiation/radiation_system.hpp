@@ -1085,6 +1085,7 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<problem_t>::ComputeEintFromEgas(const doubl
 	const double p_sq = X1GasMom * X1GasMom + X2GasMom * X2GasMom + X3GasMom * X3GasMom;
 	const double Ekin = p_sq / (2.0 * density);
 	const double Eint = Etot - Ekin;
+
 	AMREX_ASSERT_WITH_MESSAGE(Eint > 0., "Gas internal energy is not positive!");
 	return Eint;
 }

@@ -74,7 +74,6 @@ template <> void QuokkaSimulation<BasicTurbulence>::setInitialConditionsOnGrid(q
 
 auto problem_main() -> int
 {
-	const int max_timesteps = 1;
 
 	// Sets all variables to be periodic
 	const int ncomp_cc = Physics_Indices<BasicTurbulence>::nvarTotal_cc;
@@ -89,9 +88,8 @@ auto problem_main() -> int
 
 	QuokkaSimulation<BasicTurbulence> sim(BCs_cc);
 
-	sim.maxTimesteps_ = max_timesteps;
-	sim.constantDt_ = 1 / 16;
-
+    sim.stopTime_ = 1;
+    sim.plotfileInterval_ = 1;
 	sim.setInitialConditions();
 
 	// Main time loop

@@ -13,7 +13,8 @@
 #include "radiation/radiation_system.hpp"
 
 namespace quokka::TurbulentDriving{
-template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in, const amrex::Real levelVolume) -> bool
+
+template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in) -> bool
 {
 	const Real dt = dt_in;
 
@@ -32,12 +33,18 @@ template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amr
 			const amrex::Real x2Mom = state(i, j, k, HydroSystem<problem_t>::x2Momentum_index);
 			const amrex::Real x3Mom = state(i, j, k, HydroSystem<problem_t>::x3Momentum_index);
 			const amrex::Real Egas = state(i, j, k, HydroSystem<problem_t>::energy_index);
+			const amrex::Real IntEgas = state(i, j, k, HydroSystem<problem_t>::internalEnergy_index);
 
-			const amrex::Real dXMom = 0.1;
-			const amrex::Real dE = dXMom * dXMom / 2 * (rho * levelVolume);
+			const amrex::Real TargetForce = 0.1;
 
-			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) = x1Mom + dXMom;
-			state(i, j, k, HydroSystem<problem_t>::energy_index) = Egas;
+			const amrex::Real dXMom = TargetForce * dt;
+
+			const amrex::Real newXMom = x1Mom + dXMom;
+
+			const amrex::Real dE = dXMom * dXMom / (2 * rho);
+
+			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) += dXMom;
+			state(i, j, k, HydroSystem<problem_t>::energy_index) += dE;	
 		});
 	}
 	return true;

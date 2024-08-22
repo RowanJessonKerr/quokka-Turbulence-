@@ -59,4 +59,4 @@ add_subdirectory(ShockCloud)
 add_subdirectory(StarCluster)
 add_subdirectory(SphericalCollapse)
 
-add_subdirectory(Turbulence2D)
+add_subdirectory(Turbulence)

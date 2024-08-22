@@ -1,7 +1,5 @@
 if (AMReX_SPACEDIM EQUAL 3)
-    add_executable(binary_orbit binary_orbit.cpp ${QuokkaObjSources}
-            ../Turbulence2D/test_turbulence.cpp
-            ../Turbulence2D/test_turbulence.hpp)
+    add_executable(binary_orbit binary_orbit.cpp ${QuokkaObjSources})
     if(AMReX_GPU_BACKEND MATCHES "CUDA")
         setup_target_for_cuda_compilation(binary_orbit)
     endif()
