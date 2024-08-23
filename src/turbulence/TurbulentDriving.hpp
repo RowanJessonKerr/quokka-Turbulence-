@@ -50,8 +50,7 @@ template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amr
 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 			const amrex::Real rho = state(i, j, k, HydroSystem<problem_t>::density_index);
 
-			const auto TargetForce  = amrex::GpuArray<amrex::Real,AMREX_SPACEDIM>(
-                    AMREX_D_DECL(forceField(i,j,k,0),forceField(i,j,k,1),forceField(i,j,k,2)));
+			const auto TargetForce  = amrex::Array<amrex::Real,AMREX_SPACEDIM>{forceField(i,j,k,0),forceField(i,j,k,1),forceField(i,j,k,2)};
 
             amrex::Real dE =0;
 
