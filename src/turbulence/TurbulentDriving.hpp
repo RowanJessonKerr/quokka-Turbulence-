@@ -14,7 +14,25 @@
 
 namespace quokka::TurbulentDriving{
 
-template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in) -> bool
+    template <typename problem_t> auto computeForceField(const amrex::Box box, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &cellSizes){
+
+        amrex::Dim3 lowVec = (amrex::Dim3 &&) box.smallEnd();
+        amrex::Dim3 highVec = (amrex::Dim3 &&) box.bigEnd();
+        const auto &length = box.length3d();
+
+        auto* fieldBaseArray = new amrex::Real[length[0] * length[1] * length[2]* AMREX_SPACEDIM];
+
+        amrex::Array4<amrex::Real> Field(fieldBaseArray,lowVec, highVec,AMREX_SPACEDIM);
+
+        amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            Field(i,j,k,0) = sin(i * cellSizes[0]);
+            Field(i,j,k,1) = sin(j * cellSizes[1]);
+        });
+
+        return Field;
+    }
+
+template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &cellSizes) -> bool
 {
 	const Real dt = dt_in;
 
@@ -27,24 +45,23 @@ template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amr
 		auto const &state = mf.array(iter);
 		auto const &nsubsteps = nsubstepsMF.array(iter);
 
+        auto const &forceField = computeForceField<problem_t>(indexRange, cellSizes);
+
 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 			const amrex::Real rho = state(i, j, k, HydroSystem<problem_t>::density_index);
-			const amrex::Real x1Mom = state(i, j, k, HydroSystem<problem_t>::x1Momentum_index);
-			const amrex::Real x2Mom = state(i, j, k, HydroSystem<problem_t>::x2Momentum_index);
-			const amrex::Real x3Mom = state(i, j, k, HydroSystem<problem_t>::x3Momentum_index);
-			const amrex::Real Egas = state(i, j, k, HydroSystem<problem_t>::energy_index);
-			const amrex::Real IntEgas = state(i, j, k, HydroSystem<problem_t>::internalEnergy_index);
 
-			const amrex::Real TargetForce = 0.1;
+			const auto TargetForce  = amrex::GpuArray<amrex::Real,AMREX_SPACEDIM>(
+                    AMREX_D_DECL(forceField(i,j,k,0),forceField(i,j,k,1),forceField(i,j,k,2)));
 
-			const amrex::Real dXMom = TargetForce * dt;
+            amrex::Real dE =0;
 
-			const amrex::Real newXMom = x1Mom + dXMom;
+            for (int m =0; m<AMREX_SPACEDIM;m++){
+                const amrex::Real dMom = TargetForce[i] * dt;
+                state(i, j, k, HydroSystem<problem_t>::x1Momentum_index + i) += dMom;
+                dE += dMom * dMom / (2 * rho);
+            }
 
-			const amrex::Real dE = dXMom * dXMom / (2 * rho);
-
-			state(i, j, k, HydroSystem<problem_t>::x1Momentum_index) += dXMom;
-			state(i, j, k, HydroSystem<problem_t>::energy_index) += dE;	
+			state(i, j, k, HydroSystem<problem_t>::energy_index) += dE;
 		});
 	}
 	return true;

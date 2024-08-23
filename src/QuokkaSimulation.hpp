@@ -533,7 +533,8 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 	}
 
 	if (Physics_Traits<problem_t>::is_driving_enabled){
-		quokka::TurbulentDriving::computeDriving<problem_t>(state,dt);
+        auto const &cellSizes = geom[lev].CellSizeArray();
+        quokka::TurbulentDriving::computeDriving<problem_t>(state,dt, cellSizes);
 	}
 
 	// start by assuming chemistry burn is successful.
