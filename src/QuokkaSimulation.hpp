@@ -60,6 +60,9 @@
 #include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
+#include "../extern/turbulence_generator/plugins/quokka/AmrexPlugin.h"
+#include "../extern/turbulence_generator/TurbGen.h"
+
 
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
@@ -143,6 +146,8 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Long radiationCellUpdates_ = 0; // total number of radiation cell-updates
 
+	TurbGen tg; // create TurbGen class object for turbulent driving
+
 	// member functions
 	explicit QuokkaSimulation(amrex::Vector<amrex::BCRec> &BCs_cc, amrex::Vector<amrex::BCRec> &BCs_fc) : AMRSimulation<problem_t>(BCs_cc, BCs_fc)
 	{
@@ -165,6 +170,11 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 		amrex::Real small_temp = 1e-10;
 		amrex::Real small_dens = 1e-100;
 		eos_init(small_temp, small_dens);
+
+		if constexpr(Physics_Traits<problem_t>::is_driving_enabled){
+			tg = TurbGen();
+			tg.init_driving(parameter_file); 
+		}
 	}
 
 	[[nodiscard]] static auto getScalarVariableNames() -> std::vector<std::string>;
@@ -534,6 +544,9 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 
 	if (Physics_Traits<problem_t>::is_driving_enabled){
         auto const &cellSizes = geom[lev].CellSizeArray();
+
+		bool have_updated_pattern = tg.check_for_update(time);
+
         quokka::TurbulentDriving::computeDriving<problem_t>(state,dt, cellSizes);
 	}
 
