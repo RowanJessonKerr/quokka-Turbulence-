@@ -60,7 +60,6 @@
 #include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
-#include "../extern/turbulence_generator/plugins/quokka/AmrexPlugin.h"
 #include "../extern/turbulence_generator/TurbGen.h"
 
 
@@ -146,7 +145,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Long radiationCellUpdates_ = 0; // total number of radiation cell-updates
 
-	TurbGen tg; // create TurbGen class object for turbulent driving
+	TurbGen tg = TurbGen(); // create TurbGen class object for turbulent driving
 
 	// member functions
 	explicit QuokkaSimulation(amrex::Vector<amrex::BCRec> &BCs_cc, amrex::Vector<amrex::BCRec> &BCs_fc) : AMRSimulation<problem_t>(BCs_cc, BCs_fc)
@@ -173,7 +172,11 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 		if constexpr(Physics_Traits<problem_t>::is_driving_enabled){
 			tg = TurbGen();
-			tg.init_driving(parameter_file); 
+            std::string filePath;
+
+            amrex::ParmParse turb("Turbulence");
+            turb.query("path_to_turb_settings", filePath);
+			tg.init_driving(filePath);
 		}
 	}
 
@@ -545,9 +548,11 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 	if (Physics_Traits<problem_t>::is_driving_enabled){
         auto const &cellSizes = geom[lev].CellSizeArray();
 
-		bool have_updated_pattern = tg.check_for_update(time);
+        // Updates the field if necessary
+        // returns a bool if it was updated
+		tg.check_for_update(time);
 
-        quokka::TurbulentDriving::computeDriving<problem_t>(state,dt, cellSizes);
+        quokka::TurbulentDriving::computeDriving<problem_t>(state,dt, cellSizes, tg);
 	}
 
 	// start by assuming chemistry burn is successful.

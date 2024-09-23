@@ -88,8 +88,8 @@ auto problem_main() -> int
 
 	QuokkaSimulation<BasicTurbulence> sim(BCs_cc);
 
-    sim.stopTime_ = 1;
-    sim.plotfileInterval_ = 1;
+    sim.stopTime_ = 100;
+    sim.plotfileInterval_ = 150;
 	sim.setInitialConditions();
 
 	// Main time loop
