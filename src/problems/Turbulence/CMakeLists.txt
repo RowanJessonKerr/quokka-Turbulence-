@@ -1,4 +1,4 @@
-if (AMReX_SPACEDIM EQUAL 2)
+if (AMReX_SPACEDIM EQUAL 3)
     add_executable(test_turbulence test_turbulence.cpp ${QuokkaObjSources}
             test_turbulence.cpp
             test_turbulence.cpp)

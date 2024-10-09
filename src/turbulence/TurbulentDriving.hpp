@@ -15,16 +15,6 @@
 
 namespace quokka::TurbulentDriving{
 
-    template <typename problem_t> auto computeForceField(const amrex::Box& box, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &cellSizes, TurbGen &tg){
-
-        amrex::FArrayBox fab(box, AMREX_SPACEDIM);
-
-        amrex::Array4<amrex::Real> Field = fab.array();
-
-        tg.get_turb_vector_unigrid(fab, cellSizes);
-        return Field;
-    }
-
  template <typename problem_t> auto computeDriving(amrex::MultiFab &mf, const amrex::Real dt_in, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &cellSizes, TurbGen &tg) -> bool
 {
 	const Real dt = dt_in;
@@ -38,7 +28,14 @@ namespace quokka::TurbulentDriving{
 		auto const &state = mf.array(iter);
 		auto const &nsubsteps = nsubstepsMF.array(iter);
 
-        auto const &forceField = computeForceField<problem_t>(indexRange, cellSizes, tg);
+		amrex::FArrayBox fab(indexRange, AMREX_SPACEDIM);
+
+        amrex::Array4<amrex::Real> forceField = fab.array();
+
+        tg.get_turb_vector_unigrid(fab, cellSizes);
+
+		double b = forceField(0,0,0,0);
+		double a = 12;
 
 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 			const amrex::Real rho = state(i, j, k, HydroSystem<problem_t>::density_index);
@@ -47,6 +44,10 @@ namespace quokka::TurbulentDriving{
 
             for (int m =0; m<AMREX_SPACEDIM;m++){
                 const amrex::Real dMom = forceField(i,j,k,m) * dt;
+
+				if (std::isnan(dMom)){
+					double a = 1;
+				}
 
                 state(i, j, k, HydroSystem<problem_t>::x1Momentum_index + m) += dMom;
                 dE += dMom * dMom / (2 * rho);
