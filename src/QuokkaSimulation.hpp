@@ -60,7 +60,7 @@
 #include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
-#include "../extern/turbulence_generator/TurbGen.h"
+#include "../extern/turbulence_generator/plugins/AMReX/TurbGenAmrex.h"
 
 
 // Simulation class should be initialized only once per program (i.e., is a singleton)
@@ -145,7 +145,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Long radiationCellUpdates_ = 0; // total number of radiation cell-updates
 
-	TurbGen tg = TurbGen(); // create TurbGen class object for turbulent driving
+	TurbGenAmrex tg; // create TurbGen class object for turbulent driving
 
 	// member functions
 	explicit QuokkaSimulation(amrex::Vector<amrex::BCRec> &BCs_cc, amrex::Vector<amrex::BCRec> &BCs_fc) : AMRSimulation<problem_t>(BCs_cc, BCs_fc)
@@ -171,7 +171,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 		eos_init(small_temp, small_dens);
 
 		if constexpr(Physics_Traits<problem_t>::is_driving_enabled){
-			tg = TurbGen();
+			tg = TurbGenAmrex();
             std::string filePath;
 
             amrex::ParmParse turb("Turbulence");
@@ -550,7 +550,50 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 
         // Updates the field if necessary
         // returns a bool if it was updated
-		tg.check_for_update(time);
+
+        amrex::Real sumsHost[] = {0,0,0};
+        amrex::Real sumsSqrdHost[] = {0,0,0};
+
+		amrex::Gpu::DeviceVector<amrex::Real> sumsGpu = {0,0,0};
+		amrex::Gpu::DeviceVector<amrex::Real> sumsSqrdGpu = {0,0,0};
+
+        auto sumsSqrdDevice = sumsGpu.data();
+        auto sumsDevice = sumsSqrdGpu.data();
+        long n = 0;
+
+        for (amrex::MFIter iter(state); iter.isValid(); ++iter) {
+            const amrex::Box &indexRange = iter.validbox();
+            auto const &data = state.array(iter);
+
+            n += indexRange.numPts();
+
+            amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+
+                amrex::GpuArray<amrex::Real, 3> vels{};
+                vels[0] = data(i,j,k, HydroSystem<problem_t>::x1Velocity_index);
+                vels[1] = data(i,j,k, HydroSystem<problem_t>::x2Velocity_index);
+                vels[2] = data(i,j,k, HydroSystem<problem_t>::x3Velocity_index);
+
+                for (int d = 0; d<3; d++){
+                    sumsDevice[d] += vels[d];
+                    sumsSqrdDevice[d] += vels[d] * vels[d];
+                }
+            });
+        }
+
+		amrex::Gpu::copy(amrex::Gpu::DeviceToHost(), sumsDevice, sumsDevice + 3, sumsHost);
+		amrex::Gpu::copy(amrex::Gpu::DeviceToHost(), sumsSqrdDevice, sumsSqrdDevice + 3, sumsSqrdHost);
+
+        double dispersion[] = {0,0,0};
+        for (int i = 0; i <3; i++){
+            dispersion[i] = sqrt(sumsSqrdHost[i]/n) - (sumsHost[i] / n) * (sumsHost[i] / n);
+        }
+
+		if (time == 0){
+			tg.check_for_update(time);
+		}else{
+			tg.check_for_update(time, dispersion);
+		}
 
         quokka::TurbulentDriving::computeDriving<problem_t>(state,dt, cellSizes, tg);
 	}

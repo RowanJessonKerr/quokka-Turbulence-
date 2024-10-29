@@ -41,7 +41,7 @@ template <> struct Physics_Traits<BasicTurbulence> {
 };
 
 template <> struct quokka::EOS_Traits<BasicTurbulence> {
-	static constexpr double gamma = 1.0;
+	static constexpr double gamma = 1.4;
 	static constexpr double cs_isothermal = 1.0; // dimensionless
 	static constexpr double mean_molecular_weight = C::m_u;
 	static constexpr double boltzmann_constant = C::k_B;
@@ -88,8 +88,9 @@ auto problem_main() -> int
 
 	QuokkaSimulation<BasicTurbulence> sim(BCs_cc);
 
-    sim.stopTime_ = 100;
-    sim.plotfileInterval_ = 150;
+    sim.stopTime_ = 6;
+    sim.plotfileInterval_ = 300;
+    sim.maxTimesteps_ = 100000;
 	sim.setInitialConditions();
 
 	// Main time loop
