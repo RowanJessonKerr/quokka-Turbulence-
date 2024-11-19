@@ -570,13 +570,13 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
             amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 
                 amrex::GpuArray<amrex::Real, 3> vels{};
-                vels[0] = data(i,j,k, HydroSystem<problem_t>::x1Velocity_index);
-                vels[1] = data(i,j,k, HydroSystem<problem_t>::x2Velocity_index);
-                vels[2] = data(i,j,k, HydroSystem<problem_t>::x3Velocity_index);
+                vels[0] = data(i,j,k, HydroSystem<problem_t>::x1Momentum_index) / data(i,j,k, HydroSystem<problem_t>::density_index);
+                vels[1] = data(i,j,k, HydroSystem<problem_t>::x2Momentum_index) / data(i,j,k, HydroSystem<problem_t>::density_index);
+                vels[2] = data(i,j,k, HydroSystem<problem_t>::x3Momentum_index) / data(i,j,k, HydroSystem<problem_t>::density_index);
 
                 for (int d = 0; d<3; d++){
-                    sumsDevice[d] += vels[d];
-                    sumsSqrdDevice[d] += vels[d] * vels[d];
+					amrex::Gpu::Atomic::Add(&sumsDevice[d],vels[d]);
+					amrex::Gpu::Atomic::Add(&sumsSqrdDevice[d], vels[d] * vels[d]);
                 }
             });
         }
